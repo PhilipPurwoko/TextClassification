@@ -29,35 +29,33 @@ def display_training(history):
 	plt.show()
 
 def display_prediction(model,count,x_test,y_true,full_display=True):
-	array = [random.randint(0,len(x_test)) for i in range(count)]
+	print('Making prediction')
+	r_array = [random.randint(0,len(x_test)) for i in range(count)]
 	correct = []
-	for i in array:
-		prediction = model.predict([x_test[i]])
-		prediction = np.argmax(prediction[0])
+	prediction = model.predict([x_test])
+	for i in r_array:
+		cur_pred = np.argmax(prediction[i])
 		actual = np.argmax(y_true[i])
 		if full_display:
 			print(decode_text(x_test[i]))
-			print(f'Prediction : {prediction}')
+			print(f'Prediction : {cur_pred}')
 			print(f'Actual : {actual}')
 			print('')
 
-		if prediction == actual:
-			correct.append(prediction)
+		if cur_pred == actual:
+			correct.append(cur_pred)
 	print(f'Selected {count} random text')
 	print(f'Correct Predictions : {len(correct)} out of {count}')
 	print(f'Correct rate : {len(correct)/count} ({round(len(correct)/count,2)*100}%)')
 
 def create_model():
 	model = keras.Sequential([
-			keras.layers.Embedding(10000,16),
+			keras.layers.Embedding(25000,16),
 			keras.layers.GlobalAveragePooling1D(),
-			# keras.layers.Flatten(input_shape=([250,])),
+			keras.layers.Dense(16,activation='relu'),
+			keras.layers.Dropout(rate=0.5),
 			keras.layers.Dense(32,activation='relu'),
-			keras.layers.Dropout(0.2),
-			keras.layers.Dense(64,activation='relu'),
-			keras.layers.Dropout(0.2),
-			keras.layers.Dense(128,activation='relu'),
-			keras.layers.Dropout(0.2),
+			keras.layers.Dropout(rate=0.5),
 			keras.layers.Dense(2,activation='softmax')
 	])
 	calback = createCallback()
@@ -104,14 +102,14 @@ revs_dictionary = dict([(v,k) for (k,v) in dictionary.items()])
 x_train = keras.preprocessing.sequence.pad_sequences(x_train,value=dictionary['<PAD>'],padding='post',maxlen=250)
 x_test = keras.preprocessing.sequence.pad_sequences(x_test,value=dictionary['<PAD>'],padding='post',maxlen=250)
 
-x_valid = x_train[:10000]
-y_valid = y_train[:10000]
-x_train = x_train[10000:]
-y_train = y_train[10000:]
+x_valid = x_test[:10000]
+y_valid = y_test[:10000]
+x_test = x_test[10000:]
+y_test = y_test[10000:]
 
 y_train = transform_y(y_train)
 y_test = transform_y(y_test)
 y_valid = transform_y(y_valid)
 
 model = check_model('NeuralNetworkModel.h5')
-display_prediction(model,100,x_test,y_test,full_display=False)
+display_prediction(model,25000,x_test,y_test,full_display=False)
