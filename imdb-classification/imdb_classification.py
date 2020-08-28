@@ -17,7 +17,6 @@ def preprocess(data,for_x=True):
 	return np.array(final_data)
 
 def createCallback():
-		os.system('load_ext tensorboard')
 		os.makedirs('logs',exist_ok=True)
 		logdir = os.path.join('logs',datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
 		return keras.callbacks.TensorBoard(logdir)
