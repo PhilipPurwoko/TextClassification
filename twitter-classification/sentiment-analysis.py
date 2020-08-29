@@ -3,9 +3,9 @@ import numpy as np
 import nltk
 import re
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split,GridSearchCV
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report,accuracy_score
 
 class Data():
     def __init__(self):
@@ -51,7 +51,7 @@ class Data():
     def split(self,data):
         self.train = data[:31962,:]
         self.test_data = data[31962:,:]
-        self.x_train,self.x_val,self.y_train,self.y_val = train_test_split(self.train,self.train_data['label'])
+        self.x_train,self.x_val,self.y_train,self.y_val = train_test_split(self.train,self.train_data['label'],test_size=0.2)
         
 class Vectorizer():
     def __init__(self,series):
@@ -62,13 +62,18 @@ class Vectorizer():
 
 class MachineLearning():
     def __init__(self):
-        self.model = SVC(gamma='scale',verbose=True)
+        self.param_grid = {'C': [0.0001,0.001,0.01,0.1, 1, 10, 100, 1000],
+                           'gamma': [1000,100,10,1, 0.1, 0.01, 0.001, 0.0001],
+                           'kernel': ['rbf']}
+        self.model = GridSearchCV(SVC(), self.param_grid, refit = True, verbose = 3,cv=5,scoring='accuracy',n_jobs=-1)
     def train(self,x_train,y_train):
         self.model.fit(x_train,y_train)
     def predict(self,x_test):
         return self.model.predict(x_test)
     def evaluate(self,y_true,y_pred):
-        return classification_report(y_true,y_pred)
+        return (accuracy_score(y_true,y_pred),classification_report(y_true,y_pred))
+    def get_best(self):
+        return (self.model.best_params_,self.model.best_estimator_)
     
 def main():
     print('Loading Data...')
@@ -89,6 +94,9 @@ def main():
     print('Evaluating Model...')
     val_pred = model.predict(data.x_val)
     print(model.evaluate(data.y_val,val_pred))
+    best_param = model.get_best()
+    print(best_param[0])
+    print(best_param[1])
     
     print('Making Prediction...')
     prediction = model.predict(data.test_data)
@@ -97,7 +105,6 @@ def main():
     submission = pd.read_csv('test_tweets_anuFYb8.csv')
     submission.drop('tweet',axis=1,inplace=True)
     submission['label'] = prediction
-
     filename = 'Model-Prediction.csv'
     submission.to_csv(filename,index=False)
     print(f'Prediction exported to "{filename}"')
